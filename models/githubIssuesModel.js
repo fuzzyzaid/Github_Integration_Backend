@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
 const GithubIssuesSchema = new mongoose.Schema({
-  userId: { type: Number, required: true, index: true },
+ username: { type: String, required: true },
+  userId: { type: String },
   orgLogin: { type: String, required: true },
   repoName: { type: String, required: true },
-  number: { type: Number, required: true, index: true },
+  issueNumber: { type: Number, required: true },
   data: { type: Object, required: true }
-
-}, { strict: false });
+}, { timestamps: true });
 
 module.exports = mongoose.model("GithubIssues", GithubIssuesSchema,"github_issues");

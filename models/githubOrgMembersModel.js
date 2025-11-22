@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
 
 const GithubOrgMembersSchema = new mongoose.Schema({
- userId: { type: Number, required: true, index: true },
+  username: { type: String, required: true },
+  userId: { type: String },
   orgLogin: { type: String, required: true },
-  memberLogin: { type: String, required: true, index: true },
   data: { type: Object, required: true }
-
-}, { strict: false });
+}, { timestamps: true });
 
 module.exports = mongoose.model("GithubOrgMember", GithubOrgMembersSchema,"github_org_members");

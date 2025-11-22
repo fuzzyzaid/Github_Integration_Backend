@@ -31,14 +31,30 @@ const pickSort = (sortBy, sortDir) => {
 
 const projectFlatten = (doc) => {
   const obj = doc.toObject ? doc.toObject() : doc;
-  const { _id, username, orgLogin, repoName, createdAt, updatedAt, data } = obj;
-  return { _id, username, orgLogin, repoName, createdAt, updatedAt, ...(data || {}) };
+
+  const flat = {};
+
+  // Flatten top-level fields except "data"
+  Object.keys(obj).forEach(key => {
+    if (key === 'data') return; // skip top-level data
+    flat[key] = obj[key];
+  });
+
+  // Flatten "data" fields into top-level
+  if (obj.data && typeof obj.data === 'object') {
+    Object.entries(obj.data).forEach(([key, value]) => {
+      // If value is an object or array, stringify it
+      flat[key] = (typeof value === 'object' && value !== null) ? JSON.stringify(value, null, 2) : value;
+    });
+  }
+
+  return flat;
 };
 
 const inferFields = (rows) => {
   const keys = new Set();
   rows.forEach(r => Object.keys(r).forEach(k => keys.add(k)));
-  ["__v"].forEach(k => keys.delete(k));
+  ["__v", "data"].forEach(k => keys.delete(k)); // remove unwanted keys
   return Array.from(keys);
 };
 

@@ -1,12 +1,11 @@
 const mongoose = require("mongoose");
 
 const GithubRepoSchema = new mongoose.Schema({
-  userId: { type: Number, index: true, required: true },
-  orgLogin: { type: String, index: true, required: true },
-  repoName: { type: String, index: true, required: true },
-  data: { type: Object, required: true },
-  createdAt: { type: Date, default: Date.now, index: true },
-  updatedAt: { type: Date, default: Date.now, index: true }
-}, { strict: false });
+ username: { type: String, required: true },
+  userId: { type: String },
+  orgLogin: { type: String, required: true },
+  repoName: { type: String, required: true }, // repo.name
+  data: { type: Object, required: true }
+}, { timestamps: true });
 
 module.exports = mongoose.model("GithubRepo", GithubRepoSchema, "github_repos");
