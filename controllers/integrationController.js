@@ -3,6 +3,8 @@ const GithubIntegration = require("../models/githubIntegrationModel");
 const { decryptToken } = require("../helpers/encryptionHelper");
 
 const GITHUB_USER_API = "https://api.github.com/user";
+const GITHUB_USER_ORGS = "https://api.github.com/user/orgs";
+
 
 const checkIntegrationStatus = async (req, res) => {
   try {
