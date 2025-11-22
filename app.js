@@ -15,7 +15,9 @@ app.use(cors({
 
 // Routes
 const authRoutes = require('./routes/authRoute.js');
+const integrationRoutes = require('./routes/integrationRoute');
 app.use('/auth', authRoutes);
+app.use('/integration', integrationRoutes);
 
 
 // Port Details
