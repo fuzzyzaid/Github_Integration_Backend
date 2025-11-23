@@ -37,6 +37,18 @@ const saveData = async (Model, username, rows, extra = {}, userId = null) => {
   return Model.insertMany(docs);
 };
 
+async function clearUserData(username, userId) {
+  await Promise.all([
+    GithubOrgModel.deleteMany({ username, userId }),
+    GithubRepoModel.deleteMany({ username, userId }),
+    GithubCommitModel.deleteMany({ username, userId }),
+    GithubPullModel.deleteMany({ username, userId }),
+    GithubIssuesModel.deleteMany({ username, userId }),
+    GithubIssueEventsModel.deleteMany({ username, userId }),
+    GithubOrgMembersModel.deleteMany({ username, userId })
+  ]);
+}
+
 
 const syncGithubData = async (req, res) => {
   try {
@@ -48,6 +60,9 @@ const syncGithubData = async (req, res) => {
 
     const accessToken = decryptToken(integration.accessTokenEnc);
     const userId = integration.userId;
+
+     await clearUserData(username, userId);
+
 
     // 1. ORGS
     const orgs = await listUserOrgs(accessToken);

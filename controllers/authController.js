@@ -1,6 +1,7 @@
 require("dotenv").config();
 const axios = require("axios");
 const GithubIntegration = require("../models/githubIntegrationModel");
+const { syncGithubData } = require("./githubDataController");
 const { encryptToken } = require("../helpers/encryptionHelper");
 
 const GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
@@ -56,6 +57,8 @@ const githubCallback = async (req, res) => {
       },
       { upsert: true, new: true }
     );
+
+   // await syncGithubData({ body: { username: githubUser.login } }, { json: () => {} });
 
     // Redirect to Angular with username
     return res.redirect(`http://localhost:4200/integration/connect?status=success&user=${githubUser.login}`);

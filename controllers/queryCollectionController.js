@@ -31,20 +31,20 @@ const pickSort = (sortBy, sortDir) => {
 
 const projectFlatten = (doc) => {
   const obj = doc.toObject ? doc.toObject() : doc;
-
   const flat = {};
 
   // Flatten top-level fields except "data"
   Object.keys(obj).forEach(key => {
-    if (key === 'data') return; // skip top-level data
+    if (key === 'data') return;
     flat[key] = obj[key];
   });
 
   // Flatten "data" fields into top-level
   if (obj.data && typeof obj.data === 'object') {
     Object.entries(obj.data).forEach(([key, value]) => {
-      // If value is an object or array, stringify it
-      flat[key] = (typeof value === 'object' && value !== null) ? JSON.stringify(value, null, 2) : value;
+      flat[key] = (typeof value === 'object' && value !== null)
+        ? JSON.stringify(value, null, 2)
+        : value;
     });
   }
 
@@ -54,7 +54,7 @@ const projectFlatten = (doc) => {
 const inferFields = (rows) => {
   const keys = new Set();
   rows.forEach(r => Object.keys(r).forEach(k => keys.add(k)));
-  ["__v", "data"].forEach(k => keys.delete(k)); // remove unwanted keys
+  ["__v", "data"].forEach(k => keys.delete(k));
   return Array.from(keys);
 };
 
@@ -78,8 +78,26 @@ const queryCollection = async (req, res) => {
 
     if (!username) return res.status(400).json({ message: "username required" });
 
+    const existsResults = await Promise.all(
+  Object.values(COLLECTION_MAP).map(Model =>
+    Model.exists({ username })
+  )
+);
+
+// Check if any collection has data for this username
+const anyDataExists = existsResults.some(r => r !== null);
+
+if (!anyDataExists) {
+  return res.json({
+    needsSync: true,
+    message: "No data found in any collection for this user. Please trigger sync."
+  });
+}
+
+
+
     const Model = COLLECTION_MAP[collection];
-    const filter = { username }; // filter by username
+    const filter = { username };
     if (orgLogin) filter.orgLogin = orgLogin;
     if (repoName) filter.repoName = repoName;
 
@@ -99,6 +117,7 @@ const queryCollection = async (req, res) => {
     const fields = inferFields(flattened);
 
     return res.json({
+      needsSync: false,
       total,
       page: Number(page),
       pageSize: Number(pageSize),
