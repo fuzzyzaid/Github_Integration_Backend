@@ -8,75 +8,83 @@ const COLLECTION_MAP = {
   github_org_members: require("../models/githubOrgMembersModel")
 };
 
+// ---------------------- GLOBAL SEARCH ----------------------
 const buildSearchQuery = (search) => {
   if (!search) return [];
+
   return [
-    { orgLogin: new RegExp(search, "i") },
-    { repoName: new RegExp(search, "i") },
-    { "data.name": new RegExp(search, "i") },
-    { "data.login": new RegExp(search, "i") },
-    { "data.title": new RegExp(search, "i") },
-    { "data.body": new RegExp(search, "i") }
+    { orgLogin: { $regex: search, $options: "i" } },
+    { repoName: { $regex: search, $options: "i" } },
+    { "data.name": { $regex: search, $options: "i" } },
+    { "data.login": { $regex: search, $options: "i" } },
+    { "data.title": { $regex: search, $options: "i" } },
+    { "data.body": { $regex: search, $options: "i" } }
   ];
 };
 
+// ---------------------- SORTING ----------------------
 const pickSort = (sortBy, sortDir) => {
-  if (!sortBy) return { createdAt: -1 };
   const dir = sortDir === "asc" ? 1 : -1;
+
+  if (!sortBy) return { createdAt: -1 };
   if (["orgLogin", "repoName", "createdAt", "updatedAt"].includes(sortBy)) {
     return { [sortBy]: dir };
   }
+
   return { [`data.${sortBy}`]: dir };
 };
 
+// ---------------------- FLATTEN JSON ----------------------
 const projectFlatten = (doc) => {
   const obj = doc.toObject ? doc.toObject() : doc;
   const flat = {};
 
-  // Flatten top-level fields except "data"
-  Object.keys(obj).forEach(key => {
-    if (key === 'data') return;
+  for (const key in obj) {
+    if (key === "data") continue;
     flat[key] = obj[key];
-  });
+  }
 
-  // Flatten "data" fields into top-level
-  if (obj.data && typeof obj.data === 'object') {
-    Object.entries(obj.data).forEach(([key, value]) => {
-      flat[key] = (typeof value === 'object' && value !== null)
-        ? JSON.stringify(value, null, 2)
-        : value;
-    });
+  if (obj.data && typeof obj.data === "object") {
+    for (const [key, val] of Object.entries(obj.data)) {
+      flat[key] = (val && typeof val === "object")
+        ? JSON.stringify(val)
+        : val;
+    }
   }
 
   return flat;
 };
 
+// ---------------------- GET ALL FIELDS ----------------------
 const inferFields = (rows) => {
-  const keys = new Set();
-  rows.forEach(r => Object.keys(r).forEach(k => keys.add(k)));
-  ["__v", "data"].forEach(k => keys.delete(k));
-  return Array.from(keys);
+  const fields = new Set();
+  rows.forEach((r) => Object.keys(r).forEach((k) => fields.add(k)));
+
+  fields.delete("__v");
+  fields.delete("data");
+
+  return [...fields];
 };
+
 
 const queryCollection = async (req, res) => {
   try {
     const {
-      collection,
+       collection,
       username,
       orgLogin,
       repoName,
       search,
       page = 1,
-      pageSize = 50,
+      pageSize = 30,
       sortBy,
       sortDir = "desc"
     } = req.query;
 
-    if (!collection || !COLLECTION_MAP[collection]) {
+     if (!username) return res.status(400).json({ message: "username required" });
+     if (!COLLECTION_MAP[collection]) {
       return res.status(400).json({ message: "Invalid collection" });
     }
-
-    if (!username) return res.status(400).json({ message: "username required" });
 
     const existsResults = await Promise.all(
   Object.values(COLLECTION_MAP).map(Model =>
@@ -94,20 +102,22 @@ if (!anyDataExists) {
   });
 }
 
-
-
+// MAIN QUERY
     const Model = COLLECTION_MAP[collection];
     const filter = { username };
     if (orgLogin) filter.orgLogin = orgLogin;
     if (repoName) filter.repoName = repoName;
 
     const searchOr = buildSearchQuery(search);
-    const finalQuery = searchOr.length ? { $and: [filter, { $or: searchOr }] } : filter;
+    const finalQuery = searchOr.length
+      ? { $and: [filter, { $or: searchOr }] }
+      : filter;
 
     const sort = pickSort(sortBy, sortDir);
     const skip = (Number(page) - 1) * Number(pageSize);
     const limit = Math.min(Number(pageSize), 200);
 
+    // QUERY + COUNT
     const [total, docs] = await Promise.all([
       Model.countDocuments(finalQuery),
       Model.find(finalQuery).sort(sort).skip(skip).limit(limit).lean()
@@ -118,13 +128,14 @@ if (!anyDataExists) {
 
     return res.json({
       needsSync: false,
-      total,
       page: Number(page),
       pageSize: Number(pageSize),
-      sortBy: sortBy || "createdAt",
-      sortDir,
+      total,              // <<<<<<<<<<<<<< THIS WAS MISSING
+      totalPages: Math.ceil(total / pageSize),
+      rows: flattened,
       fields,
-      rows: flattened
+      sortBy,
+      sortDir
     });
   } catch (error) {
     console.error("queryCollection error:", error);
