@@ -1,15 +1,18 @@
-import GithubOrgModel from '../models/githubOrgModel.js';
-import GithubRepoModel from '../models/githubRepoModel.js';
-import GithubCommitModel from '../models/githubCommitsModel.js';
-import GithubPullModel from '../models/githubPullModel.js';
-import GithubIssuesModel from '../models/githubIssuesModel.js';
-import GithubIssueEventsModel from '../models/githubIssueEventsModel.js';
-import GithubOrgMembersModel from '../models/githubOrgMembersModel.js';
-import GithubIntegration from '../models/githubIntegrationModel.js';
-import {decryptToken} from "../helpers/encryptionHelper.js";
+// CommonJS version
+
+const GithubOrgModel = require('../models/githubOrgModel.js');
+const GithubRepoModel = require('../models/githubRepoModel.js');
+const GithubCommitModel = require('../models/githubCommitsModel.js');
+const GithubPullModel = require('../models/githubPullModel.js');
+const GithubIssuesModel = require('../models/githubIssuesModel.js');
+const GithubIssueEventsModel = require('../models/githubIssueEventsModel.js');
+const GithubOrgMembersModel = require('../models/githubOrgMembersModel.js');
+const GithubIntegration = require('../models/githubIntegrationModel.js');
+
+const { decryptToken } = require('../helpers/encryptionHelper.js');
 
 
-import { listUserOrgs, listOrgRepos, listCommits, listPulls, listIssues, issueTimeline, listOrgMembers } from '../helpers/githubHelper.js';
+const { listUserOrgs, listOrgRepos, listCommits, listPulls, listIssues, issueTimeline, listOrgMembers } =require('../helpers/githubHelper.js');
 
 // helper to insert into Mongo
 const saveData = async (Model, username, rows, extra = {}, userId = null) => {
@@ -35,7 +38,7 @@ const saveData = async (Model, username, rows, extra = {}, userId = null) => {
 };
 
 
-export const syncGithubData = async (req, res) => {
+const syncGithubData = async (req, res) => {
   try {
     const { username } = req.body;
     if (!username) return res.status(400).json({ message: "username required" });
@@ -89,3 +92,4 @@ export const syncGithubData = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+module.exports = { syncGithubData };
