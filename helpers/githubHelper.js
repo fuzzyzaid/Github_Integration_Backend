@@ -23,42 +23,107 @@ async function listOrgRepos(token, org) {
   })).data;
 }
 
-async function listCommits(token, org, repo, page = 1) {
-  return (await API.get(`/repos/${org}/${repo}/commits`, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: { per_page: 100, page }
-  })).data;
+// ------------------- UPDATED -------------------
+// Fetch **all commits across all pages**
+async function listCommits(token, org, repo) {
+  let allCommits = [];
+  let page = 1;
+
+  while (true) {
+    const commits = (await API.get(`/repos/${org}/${repo}/commits`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { per_page: 100, page }
+    })).data;
+
+    if (!commits.length) break;
+
+    allCommits = allCommits.concat(commits);
+    page++;
+  }
+
+  return allCommits;
 }
 
-async function listPulls(token, org, repo, state = 'all', page = 1) {
-  return (await API.get(`/repos/${org}/${repo}/pulls`, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: { per_page: 100, page, state }
-  })).data;
+// Fetch all pulls (still paginated)
+async function listPulls(token, org, repo, state = 'all') {
+  let allPulls = [];
+  let page = 1;
+
+  while (true) {
+    const pulls = (await API.get(`/repos/${org}/${repo}/pulls`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { per_page: 100, page, state }
+    })).data;
+
+    if (!pulls.length) break;
+
+    allPulls = allPulls.concat(pulls);
+    page++;
+  }
+
+  return allPulls;
 }
 
-async function listIssues(token, org, repo, state = 'all', page = 1) {
-  return (await API.get(`/repos/${org}/${repo}/issues`, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: { per_page: 100, page, state }
-  })).data;
+// Fetch all issues (still paginated)
+async function listIssues(token, org, repo, state = 'all') {
+  let allIssues = [];
+  let page = 1;
+
+  while (true) {
+    const issues = (await API.get(`/repos/${org}/${repo}/issues`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { per_page: 100, page, state }
+    })).data;
+
+    if (!issues.length) break;
+
+    allIssues = allIssues.concat(issues);
+    page++;
+  }
+
+  return allIssues;
 }
 
-async function issueTimeline(token, org, repo, issueNumber, page = 1) {
-  return (await API.get(`/repos/${org}/${repo}/issues/${issueNumber}/timeline`, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: { per_page: 100, page }
-  })).data;
+// Fetch issue timeline (paginated)
+async function issueTimeline(token, org, repo, issueNumber) {
+  let allEvents = [];
+  let page = 1;
+
+  while (true) {
+    const events = (await API.get(`/repos/${org}/${repo}/issues/${issueNumber}/timeline`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { per_page: 100, page }
+    })).data;
+
+    if (!events.length) break;
+
+    allEvents = allEvents.concat(events);
+    page++;
+  }
+
+  return allEvents;
 }
 
-async function listOrgMembers(token, org, page = 1) {
-  return (await API.get(`/orgs/${org}/members`, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: { per_page: 100, page }
-  })).data;
+// Fetch all org members (paginated)
+async function listOrgMembers(token, org) {
+  let allMembers = [];
+  let page = 1;
+
+  while (true) {
+    const members = (await API.get(`/orgs/${org}/members`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { per_page: 100, page }
+    })).data;
+
+    if (!members.length) break;
+
+    allMembers = allMembers.concat(members);
+    page++;
+  }
+
+  return allMembers;
 }
 
-// Export all functions in CommonJS style
 module.exports = {
   listUserOrgs,
   listOrgRepos,
