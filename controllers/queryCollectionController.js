@@ -105,8 +105,14 @@ if (!anyDataExists) {
 // MAIN QUERY
     const Model = COLLECTION_MAP[collection];
     const filter = { username };
-    if (orgLogin) filter.orgLogin = orgLogin;
-    if (repoName) filter.repoName = repoName;
+    if (orgLogin) {
+  filter.orgLogin = { $regex: orgLogin, $options: "i" };
+}
+
+if (repoName) {
+  filter.repoName = { $regex: repoName, $options: "i" };
+}
+
 
     const searchOr = buildSearchQuery(search);
     const finalQuery = searchOr.length
