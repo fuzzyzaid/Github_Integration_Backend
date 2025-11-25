@@ -1,3 +1,4 @@
+// helpers/githubHelper.js
 const axios = require('axios');
 
 const API = axios.create({
@@ -9,127 +10,97 @@ const API = axios.create({
   }
 });
 
-async function listUserOrgs(token) {
-  return (await API.get('/user/orgs', {
+// Generic first-page fetcher (per_page=100, page=1)
+async function firstPage(url, token, extraParams = {}) {
+  const resp = await API.get(url, {
     headers: { Authorization: `Bearer ${token}` },
-    params: { per_page: 100 }
-  })).data;
+    params: { per_page: 100, page: 1, ...extraParams }
+  });
+  return resp.data || [];
 }
 
-async function listOrgRepos(token, org) {
-  return (await API.get(`/orgs/${org}/repos`, {
-    headers: { Authorization: `Bearer ${token}` },
-    params: { per_page: 100, sort: 'updated' }
-  })).data;
-}
-
-// ------------------- UPDATED -------------------
-// Fetch **all commits across all pages**
-async function listCommits(token, org, repo) {
-  let allCommits = [];
-  let page = 1;
+// Generic remaining-pages fetcher (page=2..n)
+async function remainingPages(url, token, extraParams = {}) {
+  const all = [];
+  let page = 2;
 
   while (true) {
-    const commits = (await API.get(`/repos/${org}/${repo}/commits`, {
+    const resp = await API.get(url, {
       headers: { Authorization: `Bearer ${token}` },
-      params: { per_page: 100, page }
-    })).data;
+      params: { per_page: 100, page, ...extraParams }
+    });
 
-    if (!commits.length) break;
+    if (!resp.data || resp.data.length === 0) break;
 
-    allCommits = allCommits.concat(commits);
+    all.push(...resp.data);
     page++;
   }
 
-  return allCommits;
+  return all;
 }
 
-// Fetch all pulls (still paginated)
-async function listPulls(token, org, repo, state = 'all') {
-  let allPulls = [];
-  let page = 1;
+// -------- orgs --------
+const listUserOrgs_FirstPage = (token) => firstPage('/user/orgs', token);
+const listUserOrgs_AllPages = (token) => remainingPages('/user/orgs', token);
 
-  while (true) {
-    const pulls = (await API.get(`/repos/${org}/${repo}/pulls`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: { per_page: 100, page, state }
-    })).data;
+// -------- repos --------
+const listOrgRepos_FirstPage = (token, org) => firstPage(`/orgs/${org}/repos`, token, { sort: 'updated' });
+const listOrgRepos_AllPages = (token, org) => remainingPages(`/orgs/${org}/repos`, token, { sort: 'updated' });
 
-    if (!pulls.length) break;
+// -------- commits --------
+const listCommits_FirstPage = (token, org, repo) =>
+  firstPage(`/repos/${org}/${repo}/commits`, token);
 
-    allPulls = allPulls.concat(pulls);
-    page++;
-  }
+const listCommits_AllPages = (token, org, repo) =>
+  remainingPages(`/repos/${org}/${repo}/commits`, token);
 
-  return allPulls;
-}
+// -------- pulls --------
+const listPulls_FirstPage = (token, org, repo) =>
+  firstPage(`/repos/${org}/${repo}/pulls`, token, { state: 'all' });
 
-// Fetch all issues (still paginated)
-async function listIssues(token, org, repo, state = 'all') {
-  let allIssues = [];
-  let page = 1;
+const listPulls_AllPages = (token, org, repo) =>
+  remainingPages(`/repos/${org}/${repo}/pulls`, token, { state: 'all' });
 
-  while (true) {
-    const issues = (await API.get(`/repos/${org}/${repo}/issues`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: { per_page: 100, page, state }
-    })).data;
+// -------- issues --------
+const listIssues_FirstPage = (token, org, repo) =>
+  firstPage(`/repos/${org}/${repo}/issues`, token, { state: 'all' });
 
-    if (!issues.length) break;
+const listIssues_AllPages = (token, org, repo) =>
+  remainingPages(`/repos/${org}/${repo}/issues`, token, { state: 'all' });
 
-    allIssues = allIssues.concat(issues);
-    page++;
-  }
+// -------- issue timeline --------
+const listIssueTimeline_FirstPage = (token, org, repo, issueNumber) =>
+  firstPage(`/repos/${org}/${repo}/issues/${issueNumber}/timeline`, token);
 
-  return allIssues;
-}
+const listIssueTimeline_AllPages = (token, org, repo, issueNumber) =>
+  remainingPages(`/repos/${org}/${repo}/issues/${issueNumber}/timeline`, token);
 
-// Fetch issue timeline (paginated)
-async function issueTimeline(token, org, repo, issueNumber) {
-  let allEvents = [];
-  let page = 1;
+// -------- org members --------
+const listOrgMembers_FirstPage = (token, org) =>
+  firstPage(`/orgs/${org}/members`, token);
 
-  while (true) {
-    const events = (await API.get(`/repos/${org}/${repo}/issues/${issueNumber}/timeline`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: { per_page: 100, page }
-    })).data;
-
-    if (!events.length) break;
-
-    allEvents = allEvents.concat(events);
-    page++;
-  }
-
-  return allEvents;
-}
-
-// Fetch all org members (paginated)
-async function listOrgMembers(token, org) {
-  let allMembers = [];
-  let page = 1;
-
-  while (true) {
-    const members = (await API.get(`/orgs/${org}/members`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: { per_page: 100, page }
-    })).data;
-
-    if (!members.length) break;
-
-    allMembers = allMembers.concat(members);
-    page++;
-  }
-
-  return allMembers;
-}
+const listOrgMembers_AllPages = (token, org) =>
+  remainingPages(`/orgs/${org}/members`, token);
 
 module.exports = {
-  listUserOrgs,
-  listOrgRepos,
-  listCommits,
-  listPulls,
-  listIssues,
-  issueTimeline,
-  listOrgMembers
+  listUserOrgs_FirstPage,
+  listUserOrgs_AllPages,
+
+  listOrgRepos_FirstPage,
+  listOrgRepos_AllPages,
+
+  listCommits_FirstPage,
+  listCommits_AllPages,
+
+  listPulls_FirstPage,
+  listPulls_AllPages,
+
+  listIssues_FirstPage,
+  listIssues_AllPages,
+
+  listIssueTimeline_FirstPage,
+  listIssueTimeline_AllPages,
+
+  listOrgMembers_FirstPage,
+  listOrgMembers_AllPages
 };
