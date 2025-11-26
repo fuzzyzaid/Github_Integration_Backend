@@ -4,7 +4,7 @@ const GithubRepoSchema = new mongoose.Schema({
  username: { type: String, required: true },
   userId: { type: String },
   orgLogin: { type: String, required: true },
-  repoName: { type: String, required: true }, // repo.name
+  repoName: { type: String, required: true },
   data: { type: Object, required: true }
 });
 

@@ -8,9 +8,7 @@ const COLLECTION_MAP = {
   github_org_members: require("../models/githubOrgMembersModel")
 };
 
-/* -----------------------------------------------------
-   RECURSIVE FLATTEN (infinite levels)
------------------------------------------------------- */
+
 const flattenObject = (obj, parentKey = "", result = {}) => {
   if (!obj || typeof obj !== "object") return result;
 
@@ -32,15 +30,12 @@ const flattenObject = (obj, parentKey = "", result = {}) => {
   return result;
 };
 
-/* -----------------------------------------------------
-   FLATTEN FULL DOCUMENT
------------------------------------------------------- */
+
 const projectFlatten = (doc) => {
   const o = doc.toObject ? doc.toObject() : doc;
 
   let flat = {};
 
-  // keep root fields except data
   for (const key in o) {
     if (key !== "data") flat[key] = o[key];
   }
@@ -56,9 +51,7 @@ const projectFlatten = (doc) => {
   return flat;
 };
 
-/* -----------------------------------------------------
-   INFER FIELDS FROM FLATTENED ROWS
------------------------------------------------------- */
+
 const inferFieldsFromRows = (rows) => {
   const fields = new Set();
 
@@ -71,9 +64,7 @@ const inferFieldsFromRows = (rows) => {
   return [...fields];
 };
 
-/* -----------------------------------------------------
-   SORTING
------------------------------------------------------- */
+
 const pickSort = (sortBy, sortDir) => {
   const dir = sortDir === "asc" ? 1 : -1;
 
@@ -82,9 +73,7 @@ const pickSort = (sortBy, sortDir) => {
   return { [sortBy]: dir };
 };
 
-/* -----------------------------------------------------
-   MAIN QUERY
------------------------------------------------------- */
+
 const queryCollection = async (req, res) => {
   try {
     const {
@@ -122,21 +111,17 @@ if (!anyDataExists) {
 }
     const Model = COLLECTION_MAP[collection];
 
-    // Base filter
+
     const filter = { username };
     if (orgLogin) filter.orgLogin = { $regex: orgLogin, $options: "i" };
     if (repoName) filter.repoName = { $regex: repoName, $options: "i" };
 
-    // Sorting
     const sort = pickSort(sortBy, sortDir);
 
-    // Fetch ALL docs for this user + filter
     const rawDocs = await Model.find(filter).sort(sort).lean();
 
-    // Flatten all docs
     const flatDocs = rawDocs.map(projectFlatten);
 
-    // GLOBAL SEARCH (in-memory)
     let filtered = flatDocs;
     if (search) {
       const s = search.toLowerCase();
@@ -147,14 +132,13 @@ if (!anyDataExists) {
       );
     }
 
-    // Pagination AFTER filtering
+
     const limit = Math.min(Number(pageSize), 200);
     const skip = (Number(page) - 1) * limit;
 
     const total = filtered.length;
     const paginated = filtered.slice(skip, skip + limit);
 
-    // Infer fields for AG Grid
     const fields = inferFieldsFromRows(paginated);
 
     return res.json({

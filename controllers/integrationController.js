@@ -68,7 +68,7 @@ const removeIntegration = async (req, res) => {
     // Delete integration itself
     await GithubIntegration.deleteMany({ username });
 
-    // Delete all related docs by username + userId
+    // Delete all related docs by username + userId in other collections
     const deletions = await Promise.all([
       GithubOrgModel.deleteMany({ username, userId }),
       GithubRepoModel.deleteMany({ username, userId }),

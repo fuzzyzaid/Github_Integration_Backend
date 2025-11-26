@@ -10,7 +10,7 @@ const API = axios.create({
   }
 });
 
-// Generic first-page fetcher (per_page=100, page=1)
+// To fetch data for first page (per_page=100, page=1)
 async function firstPage(url, token, extraParams = {}) {
   const resp = await API.get(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -19,7 +19,7 @@ async function firstPage(url, token, extraParams = {}) {
   return resp.data || [];
 }
 
-// Generic remaining-pages fetcher (page=2..n)
+// Fetch remaining-pages fetcher (page=2..n)
 async function remainingPages(url, token, extraParams = {}) {
   const all = [];
   let page = 2;

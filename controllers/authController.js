@@ -14,7 +14,7 @@ const redirectToGithub = (req, res) => {
   return res.redirect(redirectUrl);
 };
 
-// GitHub Callback
+// Callback from Github
 const githubCallback = async (req, res) => {
   const code = req.query.code;
   if (!code) return res.status(400).json({ message: "Authorization code missing" });
@@ -57,8 +57,6 @@ const githubCallback = async (req, res) => {
       },
       { upsert: true, new: true }
     );
-
-   // await syncGithubData({ body: { username: githubUser.login } }, { json: () => {} });
 
     // Redirect to Angular with username
     return res.redirect(`http://localhost:4200/integration/connect?status=success&user=${githubUser.login}`);
