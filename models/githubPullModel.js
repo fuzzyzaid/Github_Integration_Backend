@@ -6,5 +6,5 @@ const GithubPullSchema = new mongoose.Schema({
   orgLogin: { type: String, required: true },
   repoName: { type: String, required: true },
   data: { type: Object, required: true }
-}, { timestamps: true });
+},);
 module.exports = mongoose.model("GithubPull", GithubPullSchema,"github_pulls");

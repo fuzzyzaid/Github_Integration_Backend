@@ -6,6 +6,6 @@ const GithubRepoSchema = new mongoose.Schema({
   orgLogin: { type: String, required: true },
   repoName: { type: String, required: true }, // repo.name
   data: { type: Object, required: true }
-}, { timestamps: true });
+});
 
 module.exports = mongoose.model("GithubRepo", GithubRepoSchema, "github_repos");

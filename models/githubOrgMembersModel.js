@@ -5,6 +5,6 @@ const GithubOrgMembersSchema = new mongoose.Schema({
   userId: { type: String },
   orgLogin: { type: String, required: true },
   data: { type: Object, required: true }
-}, { timestamps: true });
+}, );
 
 module.exports = mongoose.model("GithubOrgMember", GithubOrgMembersSchema,"github_org_members");
