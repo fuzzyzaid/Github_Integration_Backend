@@ -105,6 +105,21 @@ const queryCollection = async (req, res) => {
     if (!COLLECTION_MAP[collection])
       return res.status(400).json({ message: "Invalid collection" });
 
+   const existsResults = await Promise.all(
+  Object.values(COLLECTION_MAP).map(Model =>
+    Model.exists({ username })
+  )
+);
+
+// Check if any collection has data for this username
+const anyDataExists = existsResults.some(r => r !== null);
+
+if (!anyDataExists) {
+  return res.json({
+    needsSync: true,
+    message: "No data found in any collection for this user. Please trigger sync."
+  });
+}
     const Model = COLLECTION_MAP[collection];
 
     // Base filter
